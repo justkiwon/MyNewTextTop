@@ -1,0 +1,32 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TextTop", "TextTop", "{BB3DBF61-2FC8-4D5A-0746-E222D830ABF9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "desktop", "desktop", "{CA697C1D-D8EA-D353-878E-C7F2F192B9A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextTop.Desktop", "TextTop\desktop\TextTop.Desktop\TextTop.Desktop.csproj", "{A8CCADB3-E648-DAA0-9394-DCC3AF848974}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A8CCADB3-E648-DAA0-9394-DCC3AF848974}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8CCADB3-E648-DAA0-9394-DCC3AF848974}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8CCADB3-E648-DAA0-9394-DCC3AF848974}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8CCADB3-E648-DAA0-9394-DCC3AF848974}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{CA697C1D-D8EA-D353-878E-C7F2F192B9A7} = {BB3DBF61-2FC8-4D5A-0746-E222D830ABF9}
+		{A8CCADB3-E648-DAA0-9394-DCC3AF848974} = {CA697C1D-D8EA-D353-878E-C7F2F192B9A7}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2AC2E991-205A-4065-9D88-4FC17D8A9A9B}
+	EndGlobalSection
+EndGlobal

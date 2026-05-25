@@ -1,0 +1,295 @@
+:root {
+  font-family: system-ui, "Segoe UI", sans-serif;
+  color: #111827;
+  background: #f3f4f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: min(360px, 100%);
+  padding: 32px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+}
+
+.login-card h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 34px;
+}
+
+.login-card p {
+  margin: 6px 0 28px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.login-card label {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+  color: #374151;
+}
+
+.login-card input,
+.title-input {
+  height: 42px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0 12px;
+}
+
+.login-card button,
+.save-button,
+.new-button {
+  border: 0;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.login-card button {
+  width: 100%;
+  height: 42px;
+}
+
+.login-message {
+  display: block;
+  margin-top: 14px;
+  color: #4b5563;
+  text-align: center;
+}
+
+.app-shell {
+  width: min(1200px, calc(100% - 32px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.topbar div,
+.topbar nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar strong {
+  font-size: 26px;
+}
+
+.topbar span {
+  color: #6b7280;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.memo-list,
+.editor {
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
+}
+
+.memo-list {
+  padding: 16px;
+  min-height: 640px;
+}
+
+.new-button {
+  width: 100%;
+  height: 42px;
+  margin-bottom: 14px;
+}
+
+.memo-list-scroll {
+  display: grid;
+  gap: 10px;
+  max-height: 580px;
+  overflow: auto;
+}
+
+.memo-card {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 14px;
+  text-align: left;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.memo-card.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.memo-card span,
+.memo-card small {
+  color: #6b7280;
+}
+
+.editor {
+  min-height: 640px;
+  padding: 18px;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 14px;
+}
+
+.editor.empty {
+  place-items: center;
+  color: #6b7280;
+}
+
+.editor-toolbar {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) auto auto auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.topmost-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.save-button,
+.danger,
+.secondary {
+  height: 40px;
+  padding: 0 14px;
+}
+
+.danger,
+.secondary {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #374151;
+}
+
+.danger {
+  color: #b91c1c;
+}
+
+.editor-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  color: #4b5563;
+}
+
+.editor textarea {
+  width: 100%;
+  min-height: 460px;
+  resize: vertical;
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  padding: 14px;
+  line-height: 1.6;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.status-synced,
+.status-saved,
+.status-online {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.status-editing {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.status-conflict {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.status-offline {
+  color: #9a3412;
+  background: #ffedd5;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    width: min(100% - 20px, 1200px);
+    padding: 12px 0;
+  }
+
+  .topbar,
+  .topbar div,
+  .topbar nav {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .memo-list,
+  .editor {
+    min-height: auto;
+  }
+
+  .editor-toolbar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}

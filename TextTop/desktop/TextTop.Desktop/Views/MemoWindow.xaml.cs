@@ -1,6 +1,9 @@
+using System.Net;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Input;
 using TextTop.Desktop.ViewModels;
 
@@ -10,7 +13,7 @@ public partial class MemoWindow : Window
 {
     private readonly MemoWindowViewModel _viewModel;
     private bool _isClosingSaveRunning;
-    private readonly List<int> _secondaryCarets = [];
+    private bool _isLoadingContent;
 
     public MemoWindow(MemoWindowViewModel viewModel)
     {
@@ -55,137 +58,172 @@ public partial class MemoWindow : Window
         }
     }
 
-    private void MemoContentBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    private void StrikethroughButton_Click(object sender, RoutedEventArgs e)
     {
-        if (Keyboard.Modifiers != (ModifierKeys.Control | ModifierKeys.Alt))
-        {
-            return;
-        }
-
-        var point = e.GetPosition(MemoContentBox);
-        var index = MemoContentBox.GetCharacterIndexFromPoint(point, true);
-        if (index < 0)
-        {
-            index = MemoContentBox.Text.Length;
-        }
-
-        if (!_secondaryCarets.Contains(index))
-        {
-            _secondaryCarets.Add(index);
-            _secondaryCarets.Sort();
-        }
-
-        _viewModel.StatusText = $"{_secondaryCarets.Count} secondary cursors. Esc clears them.";
-        e.Handled = true;
+        ToggleStrikethrough();
     }
 
-    private void MemoContentBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    private void MemoContentBox_Loaded(object sender, RoutedEventArgs e)
     {
-        if (_secondaryCarets.Count == 0)
+        LoadContentIntoEditor(_viewModel.Content);
+    }
+
+    private void MemoContentBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_isLoadingContent)
         {
             return;
         }
 
-        InsertAtAllCarets(e.Text);
-        e.Handled = true;
+        _viewModel.Content = SerializeEditorContent();
     }
 
     private void MemoContentBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape && _secondaryCarets.Count > 0)
+        if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.X)
         {
-            _secondaryCarets.Clear();
-            _viewModel.StatusText = "Secondary cursors cleared.";
-            e.Handled = true;
-            return;
-        }
-
-        if (_secondaryCarets.Count == 0)
-        {
-            return;
-        }
-
-        if (e.Key == Key.Enter)
-        {
-            InsertAtAllCarets(Environment.NewLine);
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Back)
-        {
-            RemoveAtAllCarets(removeBeforeCaret: true);
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Delete)
-        {
-            RemoveAtAllCarets(removeBeforeCaret: false);
+            ToggleStrikethrough();
             e.Handled = true;
         }
     }
 
-    private void InsertAtAllCarets(string text)
+    private void ToggleStrikethrough()
     {
-        var mainCaret = MemoContentBox.CaretIndex;
-        var positions = _secondaryCarets
-            .Append(mainCaret)
-            .Distinct()
-            .Where(i => i >= 0 && i <= MemoContentBox.Text.Length)
-            .OrderByDescending(i => i)
-            .ToList();
-
-        var content = MemoContentBox.Text;
-        foreach (var position in positions)
-        {
-            content = content.Insert(position, text);
-        }
-
-        MemoContentBox.Text = content;
-        MemoContentBox.CaretIndex = mainCaret + text.Length;
-        _secondaryCarets.Clear();
-        foreach (var position in positions.Where(i => i != mainCaret).OrderBy(i => i))
-        {
-            _secondaryCarets.Add(position + text.Length);
-        }
-        UpdateMemoContentSource();
+        var selection = MemoContentBox.Selection;
+        var shouldRemove = IsSelectionStruck(selection);
+        selection.ApplyPropertyValue(Inline.TextDecorationsProperty, shouldRemove ? null : TextDecorations.Strikethrough);
+        MemoContentBox.Focus();
+        _viewModel.Content = SerializeEditorContent();
     }
 
-    private void RemoveAtAllCarets(bool removeBeforeCaret)
+    private static bool IsSelectionStruck(TextRange selection)
     {
-        var mainCaret = MemoContentBox.CaretIndex;
-        var positions = _secondaryCarets
-            .Append(mainCaret)
-            .Distinct()
-            .OrderByDescending(i => i)
-            .ToList();
+        var value = selection.GetPropertyValue(Inline.TextDecorationsProperty);
+        return value is TextDecorationCollection decorations
+            && decorations.Any(decoration => decoration.Location == TextDecorationLocation.Strikethrough);
+    }
 
-        var content = MemoContentBox.Text;
-        var nextCarets = new List<int>();
-
-        foreach (var caret in positions)
+    private void LoadContentIntoEditor(string content)
+    {
+        _isLoadingContent = true;
+        try
         {
-            var removeIndex = removeBeforeCaret ? caret - 1 : caret;
-            if (removeIndex < 0 || removeIndex >= content.Length)
+            var document = new FlowDocument();
+            var paragraph = new Paragraph();
+            document.Blocks.Add(paragraph);
+
+            var html = LooksLikeHtml(content)
+                ? content
+                : Regex.Replace(WebUtility.HtmlEncode(content).Replace("\r\n", "\n").Replace("\n", "<br>"), "~~(.+?)~~", "<s>$1</s>");
+
+            var strikeDepth = 0;
+            foreach (var token in Regex.Split(html, "(<[^>]+>)"))
             {
-                nextCarets.Add(caret);
-                continue;
+                if (string.IsNullOrEmpty(token))
+                {
+                    continue;
+                }
+
+                if (token.StartsWith("<", StringComparison.Ordinal))
+                {
+                    var tag = token.Trim().ToLowerInvariant();
+                    if (tag.StartsWith("<s") || tag.StartsWith("<strike") || tag.StartsWith("<del"))
+                    {
+                        strikeDepth++;
+                    }
+                    else if (tag.StartsWith("</s") || tag.StartsWith("</strike") || tag.StartsWith("</del"))
+                    {
+                        strikeDepth = Math.Max(0, strikeDepth - 1);
+                    }
+                    else if (tag.StartsWith("<br") || tag.StartsWith("</div") || tag.StartsWith("</p"))
+                    {
+                        paragraph.Inlines.Add(new LineBreak());
+                    }
+
+                    continue;
+                }
+
+                AddTextRun(paragraph, WebUtility.HtmlDecode(token), strikeDepth > 0);
             }
 
-            content = content.Remove(removeIndex, 1);
-            nextCarets.Add(removeBeforeCaret ? caret - 1 : caret);
+            MemoContentBox.Document = document;
         }
-
-        MemoContentBox.Text = content;
-        MemoContentBox.CaretIndex = Math.Clamp(removeBeforeCaret ? mainCaret - 1 : mainCaret, 0, MemoContentBox.Text.Length);
-        _secondaryCarets.Clear();
-        foreach (var caret in nextCarets.Where(i => i != MemoContentBox.CaretIndex).Select(i => Math.Clamp(i, 0, MemoContentBox.Text.Length)).Distinct().OrderBy(i => i))
+        finally
         {
-            _secondaryCarets.Add(caret);
+            _isLoadingContent = false;
         }
-        UpdateMemoContentSource();
     }
 
-    private void UpdateMemoContentSource()
+    private static void AddTextRun(Paragraph paragraph, string text, bool isStruck)
     {
-        MemoContentBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+        if (text.Length == 0)
+        {
+            return;
+        }
+
+        var run = new Run(text);
+        if (isStruck)
+        {
+            run.TextDecorations = TextDecorations.Strikethrough;
+        }
+
+        paragraph.Inlines.Add(run);
+    }
+
+    private string SerializeEditorContent()
+    {
+        var builder = new StringBuilder();
+
+        foreach (var block in MemoContentBox.Document.Blocks)
+        {
+            if (block is Paragraph paragraph)
+            {
+                AppendInlines(builder, paragraph.Inlines);
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    private static void AppendInlines(StringBuilder builder, InlineCollection inlines)
+    {
+        foreach (var inline in inlines)
+        {
+            switch (inline)
+            {
+                case Run run:
+                    AppendRun(builder, run);
+                    break;
+                case LineBreak:
+                    builder.Append("<br>");
+                    break;
+                case Span span:
+                    AppendInlines(builder, span.Inlines);
+                    break;
+            }
+        }
+    }
+
+    private static void AppendRun(StringBuilder builder, Run run)
+    {
+        var text = WebUtility.HtmlEncode(run.Text);
+        var isStruck = run.TextDecorations.Any(decoration => decoration.Location == TextDecorationLocation.Strikethrough);
+        if (isStruck)
+        {
+            builder.Append("<s>");
+        }
+
+        builder.Append(text);
+
+        if (isStruck)
+        {
+            builder.Append("</s>");
+        }
+    }
+
+    private static bool LooksLikeHtml(string content)
+    {
+        return Regex.IsMatch(content, @"</?[a-z][\s\S]*>", RegexOptions.IgnoreCase);
     }
 
     private async void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)

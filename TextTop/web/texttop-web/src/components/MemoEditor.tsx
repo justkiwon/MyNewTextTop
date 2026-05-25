@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, type KeyboardEvent } from 'react';
 import type { MemoDraft } from '../models/memo.ts';
 import { StatusBadge } from './StatusBadge.tsx';
 
@@ -11,48 +11,83 @@ interface MemoEditorProps {
 }
 
 export function MemoEditor({ memo, message, onChange, onSave, onDelete }: MemoEditorProps) {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const selectionRef = useRef<Range | null>(null);
+
+  useEffect(() => {
+    if (editorRef.current && memo) {
+      editorRef.current.innerHTML = toEditableHtml(memo.content);
+    }
+  }, [memo?.id]);
 
   if (!memo) {
     return <section className="editor empty">메모를 선택하거나 새 메모를 만드세요.</section>;
   }
 
   const toggleStrikethrough = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) {
+    const editor = editorRef.current;
+    if (!editor) {
       return;
     }
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const value = memo.content;
-    const selected = value.slice(start, end);
-    const before = value.slice(Math.max(0, start - 2), start);
-    const after = value.slice(end, end + 2);
+    editor.focus();
+    restoreEditorSelection();
+    document.execCommand('strikeThrough');
+    onChange({ ...memo, content: editor.innerHTML, status: 'editing' });
+  };
 
-    let nextValue = value;
-    let cursorPosition = end;
-
-    if (selected && before === '~~' && after === '~~') {
-      nextValue = value.slice(0, start - 2) + selected + value.slice(end + 2);
-      cursorPosition = end - 2;
-    } else if (selected) {
-      nextValue = value.slice(0, start) + `~~${selected}~~` + value.slice(end);
-      cursorPosition = end + 4;
-    } else {
-      nextValue = value.slice(0, start) + '~~~~' + value.slice(end);
-      cursorPosition = start + 2;
+  const applyFontSize = (fontSize: string) => {
+    const editor = editorRef.current;
+    if (!editor) {
+      return;
     }
 
-    onChange({ ...memo, content: nextValue, status: 'editing' });
+    editor.focus();
+    restoreEditorSelection();
+    document.execCommand('fontSize', false, '7');
+    normalizeFontTags(editor, fontSize);
+    saveEditorSelection();
+    onChange({ ...memo, content: editor.innerHTML, status: 'editing' });
+  };
 
-    requestAnimationFrame(() => {
-      if (textareaRef.current) {
-        textareaRef.current.selectionStart = cursorPosition;
-        textareaRef.current.selectionEnd = cursorPosition;
-        textareaRef.current.focus();
-      }
-    });
+  const saveEditorSelection = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    if (editor.contains(range.commonAncestorContainer)) {
+      selectionRef.current = range.cloneRange();
+    }
+  };
+
+  const restoreEditorSelection = () => {
+    const selection = window.getSelection();
+    if (!selection || !selectionRef.current) {
+      return;
+    }
+
+    selection.removeAllRanges();
+    selection.addRange(selectionRef.current);
+  };
+
+  const handleEditorInput = () => {
+    const editor = editorRef.current;
+    if (!editor) {
+      return;
+    }
+
+    saveEditorSelection();
+    onChange({ ...memo, content: editor.innerHTML, status: 'editing' });
+  };
+
+  const handleContentKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'x') {
+      event.preventDefault();
+      toggleStrikethrough();
+    }
   };
 
   return (
@@ -71,8 +106,14 @@ export function MemoEditor({ memo, message, onChange, onSave, onDelete }: MemoEd
           />
           Topmost
         </label>
-        <button className="secondary" onClick={toggleStrikethrough}>
-          Strike
+        <button
+          className="secondary format-button"
+          type="button"
+          onClick={toggleStrikethrough}
+          title="Strikethrough (Ctrl+Shift+X)"
+          aria-label="Strikethrough"
+        >
+          <span className="strike-icon">S</span>
         </button>
         <button className="save-button" onClick={onSave}>
           SAVE
@@ -83,13 +124,65 @@ export function MemoEditor({ memo, message, onChange, onSave, onDelete }: MemoEd
       </div>
       <div className="editor-status">
         <StatusBadge status={memo.status} />
+        <label className="font-size-control">
+          <span>FontSize</span>
+          <select
+            defaultValue="16"
+            onMouseDown={saveEditorSelection}
+            onFocus={saveEditorSelection}
+            onChange={(event) => applyFontSize(event.target.value)}
+          >
+            <option value="12px">12</option>
+            <option value="14px">14</option>
+            <option value="16px">16</option>
+            <option value="18px">18</option>
+            <option value="20px">20</option>
+            <option value="24px">24</option>
+            <option value="32px">32</option>
+          </select>
+        </label>
         <span>{message}</span>
       </div>
-      <textarea
-        ref={textareaRef}
-        value={memo.content}
-        onChange={(event) => onChange({ ...memo, content: event.target.value, status: 'editing' })}
+      <div
+        ref={editorRef}
+        className="content-editor"
+        contentEditable
+        role="textbox"
+        aria-multiline="true"
+        suppressContentEditableWarning
+        onKeyDown={handleContentKeyDown}
+        onKeyUp={saveEditorSelection}
+        onMouseUp={saveEditorSelection}
+        onInput={handleEditorInput}
       />
     </section>
   );
+}
+
+function normalizeFontTags(editor: HTMLDivElement, fontSize: string) {
+  editor.querySelectorAll('font[size="7"]').forEach((fontTag) => {
+    const span = document.createElement('span');
+    span.style.fontSize = fontSize;
+    span.innerHTML = fontTag.innerHTML;
+    fontTag.replaceWith(span);
+  });
+}
+
+function toEditableHtml(content: string) {
+  if (/<\/?[a-z][\s\S]*>/i.test(content)) {
+    return content;
+  }
+
+  return escapeHtml(content)
+    .replace(/~~(.+?)~~/g, '<s>$1</s>')
+    .replace(/\r?\n/g, '<br>');
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }

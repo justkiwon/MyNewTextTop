@@ -15,7 +15,9 @@ body {
 
 button,
 input,
-textarea {
+select,
+textarea,
+.content-editor {
   font: inherit;
 }
 
@@ -204,6 +206,20 @@ button {
   padding: 0 14px;
 }
 
+.format-button {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  padding: 0;
+}
+
+.strike-icon {
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
 .danger,
 .secondary {
   border: 1px solid #d1d5db;
@@ -220,18 +236,46 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
   min-height: 28px;
   color: #4b5563;
 }
 
-.editor textarea {
+.font-size-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.font-size-control select {
+  height: 28px;
+  min-width: 64px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  padding: 0 8px;
+}
+
+.content-editor {
   width: 100%;
   min-height: 460px;
-  resize: vertical;
+  overflow: auto;
   border: 1px solid #d1d5db;
   border-radius: 14px;
   padding: 14px;
   line-height: 1.6;
+  white-space: pre-wrap;
+  outline: none;
+}
+
+.content-editor:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 .status {

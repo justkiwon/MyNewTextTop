@@ -11,19 +11,23 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Height="30" Padding="8,0" VerticalContentAlignment="Center" BorderBrush="#E5D58A"/>
                 <CheckBox Grid.Column="1" Content="Top" IsChecked="{Binding IsTopMost}" Margin="8,0" VerticalAlignment="Center" Checked="Topmost_Changed" Unchecked="Topmost_Changed"/>
-                <Button Grid.Column="2" Content="SAVE" Click="SaveButton_Click" Height="30" Padding="12,0" Background="#2563EB" Foreground="White" BorderThickness="0"/>
-                <Button Grid.Column="3" Content="+" Command="{Binding NewCommand}" Height="30" Width="32" Margin="6,0,0,0" Background="#111827" Foreground="White" BorderThickness="0"/>
+                <Button Grid.Column="2" ToolTip="Strikethrough (Ctrl+Shift+X)" Click="StrikethroughButton_Click" Height="30" Width="32" Margin="6,0,0,0" Background="#FFFFFF" BorderBrush="#D1D5DB">
+                    <TextBlock Text="S" FontWeight="SemiBold" TextDecorations="Strikethrough"/>
+                </Button>
+                <Button Grid.Column="3" Content="SAVE" Click="SaveButton_Click" Height="30" Padding="12,0" Margin="6,0,0,0" Background="#2563EB" Foreground="White" BorderThickness="0"/>
+                <Button Grid.Column="4" Content="+" Command="{Binding NewCommand}" Height="30" Width="32" Margin="6,0,0,0" Background="#111827" Foreground="White" BorderThickness="0"/>
             </Grid>
             <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusText}" Foreground="#6B7280" FontSize="12" HorizontalAlignment="Right" Margin="0,6,0,0"/>
-            <TextBox x:Name="MemoContentBox"
-                     Text="{Binding Content, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                     FontFamily="Segoe UI" FontSize="14" Padding="8" BorderBrush="#E5D58A" Background="#FFFEF2"
-                     PreviewMouseDown="MemoContentBox_PreviewMouseDown"
-                     PreviewTextInput="MemoContentBox_PreviewTextInput"
-                     PreviewKeyDown="MemoContentBox_PreviewKeyDown"/>
+            <RichTextBox x:Name="MemoContentBox"
+                         VerticalScrollBarVisibility="Auto"
+                         FontFamily="Segoe UI" FontSize="14" Padding="8" BorderBrush="#E5D58A" Background="#FFFEF2"
+                         Loaded="MemoContentBox_Loaded"
+                         TextChanged="MemoContentBox_TextChanged"
+                         PreviewKeyDown="MemoContentBox_PreviewKeyDown"/>
         </DockPanel>
     </Border>
 </Window>

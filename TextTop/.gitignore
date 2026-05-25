@@ -6,6 +6,7 @@ obj/
 node_modules/
 dist/
 *.tsbuildinfo
+*.log
 .env
 appsettings.json
 config.json
